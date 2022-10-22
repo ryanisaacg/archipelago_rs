@@ -13,7 +13,6 @@ pub fn network_version() -> NetworkVersion {
     }
 }
 
-#[cfg(feature="tokio-client")]
 pub mod client;
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
