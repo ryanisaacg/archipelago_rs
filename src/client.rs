@@ -126,6 +126,8 @@ pub enum NetworkError {
     NetworkError(#[from] tungstenite::Error),
     #[error("unexpected non-text result from websocket")]
     NonTextWebsocketResult(Message),
+    #[error("Connection closed unexpectedly")]
+    ConnectionClosed,
 }
 
 pub async fn send_message(ws: &mut WebSocketStream<MaybeTlsStream<TcpStream>>, message: ClientMessage) -> Result<(), NetworkError> {
@@ -143,6 +145,7 @@ pub async fn recv_messages(ws: &mut WebSocketStream<MaybeTlsStream<TcpStream>>) 
     match ws.next().await? {
         Ok(Message::Text(response)) => Some(serde_json::from_str::<Vec<ServerMessage>>(&response)
             .map_err(|e| e.into())),
+        Ok(Message::Close(_)) => Some(Err(NetworkError::ConnectionClosed)),
         Ok(msg) => Some(Err(NetworkError::NonTextWebsocketResult(msg))),
         Err(e) => Some(Err(e.into())),
     }
