@@ -5,8 +5,8 @@ use tokio::net::TcpStream;
 use thiserror::Error;
 
 use crate::network_version;
-use crate::server_message::{ServerMessage, Connected, RoomInfo};
-use crate::client_message::{ClientMessage, Connect as ClientConnect, Say};
+use crate::server_message::{ServerMessage, Connected, DataPackageObject, RoomInfo};
+use crate::client_message::{ClientMessage, Connect as ClientConnect, GetDataPackage, Say};
 
 #[derive(Error, Debug)]
 pub enum ArchipelagoError {
@@ -22,6 +22,7 @@ pub struct ArchipelagoClient {
     ws: WebSocketStream<MaybeTlsStream<TcpStream>>,
     room_info: RoomInfo,
     message_buffer: Vec<ServerMessage>,
+    data_package: Option<DataPackageObject>,
 }
 
 impl ArchipelagoClient {
@@ -39,11 +40,29 @@ impl ArchipelagoClient {
             ws,
             room_info,
             message_buffer: iter.collect(),
+            data_package: None,
         })
+    }
+
+    pub async fn with_data_package(url: &str, games: Option<Vec<String>>) -> Result<ArchipelagoClient, ArchipelagoError> {
+        let mut client = Self::new(url).await?;
+        client.send(ClientMessage::GetDataPackage(GetDataPackage { games })).await?;
+        let response = client.recv().await?;
+        match response {
+            Some(ServerMessage::DataPackage(pkg)) => client.data_package = Some(pkg.data),
+            Some(received) => return Err(ArchipelagoError::IllegalResponse { received, expected: "DataPackage" }),
+            None => return Err(ArchipelagoError::ConnectionClosed),
+        }
+
+        Ok(client)
     }
 
     pub fn room_info(&self) -> &RoomInfo {
         &self.room_info
+    }
+
+    pub fn data_package(&self) -> Option<&DataPackageObject> {
+        self.data_package.as_ref()
     }
 
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {

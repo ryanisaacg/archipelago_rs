@@ -72,7 +72,7 @@ pub struct Say {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetDataPackage {
-    pub games: Vec<String>,
+    pub games: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

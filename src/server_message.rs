@@ -16,7 +16,7 @@ pub enum ServerMessage {
     RoomUpdate(RoomUpdate),
     Print(Print),
     PrintJSON(PrintJSON),
-    // TODO DataPackage(DataPackage),
+    DataPackage(DataPackage),
     Bounced(Bounced),
     InvalidPacket(InvalidPacket),
     Retrieved(Retrieved),
@@ -120,6 +120,24 @@ pub struct JSONMessagePart {
     pub flags: Option<i32>,
     pub player: Option<i32>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DataPackage {
+    pub data: DataPackageObject
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DataPackageObject {
+    pub games: HashMap<String, GameData>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GameData {
+    pub item_name_to_id: HashMap<String, i32>,
+    pub location_name_to_id: HashMap<String, i32>,
+    pub version: i32
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Bounced {
