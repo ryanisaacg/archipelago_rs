@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_repr::{Serialize_repr, Deserialize_repr};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
@@ -74,7 +74,7 @@ pub struct NetworkItem {
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
 #[repr(u16)]
-pub enum SlotType  {
+pub enum SlotType {
     Spectator = 0,
     Player = 1,
     Group = 2,
@@ -97,7 +97,6 @@ pub fn network_version() -> NetworkVersion {
     }
 }
 
-
 // REQUESTS
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -114,7 +113,7 @@ pub struct Connect {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectUpdate {
     pub items_handling: i32,
-    pub tags: Vec<String>
+    pub tags: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -263,7 +262,7 @@ pub struct JSONMessagePart {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DataPackage {
-    pub data: DataPackageObject
+    pub data: DataPackageObject,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -275,9 +274,8 @@ pub struct DataPackageObject {
 pub struct GameData {
     pub item_name_to_id: HashMap<String, i32>,
     pub location_name_to_id: HashMap<String, i32>,
-    pub version: i32
+    pub version: i32,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Bounced {
@@ -294,12 +292,10 @@ pub struct InvalidPacket {
     pub text: String,
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Retrieved {
     keys: Value,
 }
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SetReply {
@@ -307,4 +303,3 @@ pub struct SetReply {
     value: Value,
     original_value: Value,
 }
-

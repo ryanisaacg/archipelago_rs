@@ -17,7 +17,9 @@ async fn main() -> anyhow::Result<()> {
 
     let game = prompt("What game?")?;
     let slot = prompt("What slot?")?;
-    client.connect(&game, &slot, None, Some(7), vec!["AP".to_string()]).await?;
+    client
+        .connect(&game, &slot, None, Some(7), vec!["AP".to_string()])
+        .await?;
     println!("Connected to slot!");
 
     client.say("Hello, world!").await?;
@@ -31,4 +33,3 @@ fn prompt(text: &str) -> Result<String, anyhow::Error> {
 
     Ok(io::stdin().lock().lines().next().unwrap()?)
 }
-

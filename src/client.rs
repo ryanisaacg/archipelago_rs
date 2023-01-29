@@ -1,15 +1,18 @@
 use futures_util::{SinkExt, StreamExt};
-use tungstenite::protocol::Message;
-use tokio_tungstenite::{WebSocketStream, MaybeTlsStream, connect_async};
-use tokio::net::TcpStream;
 use thiserror::Error;
+use tokio::net::TcpStream;
+use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
+use tungstenite::protocol::Message;
 
 use crate::protocol::*;
 
 #[derive(Error, Debug)]
 pub enum ArchipelagoError {
     #[error("illegal response")]
-    IllegalResponse { received: ServerMessage, expected: &'static str },
+    IllegalResponse {
+        received: ServerMessage,
+        expected: &'static str,
+    },
     #[error("connection closed by server")]
     ConnectionClosed,
     #[error("data failed to serialize")]
@@ -36,11 +39,18 @@ impl ArchipelagoClient {
      */
     pub async fn new(url: &str) -> Result<ArchipelagoClient, ArchipelagoError> {
         let (mut ws, _) = connect_async(url).await?;
-        let response = recv_messages(&mut ws).await.ok_or(ArchipelagoError::ConnectionClosed)??;
+        let response = recv_messages(&mut ws)
+            .await
+            .ok_or(ArchipelagoError::ConnectionClosed)??;
         let mut iter = response.into_iter();
         let room_info = match iter.next() {
             Some(ServerMessage::RoomInfo(room)) => room,
-            Some(received) => return Err(ArchipelagoError::IllegalResponse { received , expected: "Expected RoomInfo" }),
+            Some(received) => {
+                return Err(ArchipelagoError::IllegalResponse {
+                    received,
+                    expected: "Expected RoomInfo",
+                })
+            }
             None => return Err(ArchipelagoError::ConnectionClosed),
         };
 
@@ -56,13 +66,23 @@ impl ArchipelagoClient {
      * Create an instance of the client and connect to the server, fetching the given games' Data
      * Package
      */
-    pub async fn with_data_package(url: &str, games: Option<Vec<String>>) -> Result<ArchipelagoClient, ArchipelagoError> {
+    pub async fn with_data_package(
+        url: &str,
+        games: Option<Vec<String>>,
+    ) -> Result<ArchipelagoClient, ArchipelagoError> {
         let mut client = Self::new(url).await?;
-        client.send(ClientMessage::GetDataPackage(GetDataPackage { games })).await?;
+        client
+            .send(ClientMessage::GetDataPackage(GetDataPackage { games }))
+            .await?;
         let response = client.recv().await?;
         match response {
             Some(ServerMessage::DataPackage(pkg)) => client.data_package = Some(pkg.data),
-            Some(received) => return Err(ArchipelagoError::IllegalResponse { received, expected: "DataPackage" }),
+            Some(received) => {
+                return Err(ArchipelagoError::IllegalResponse {
+                    received,
+                    expected: "DataPackage",
+                })
+            }
             None => return Err(ArchipelagoError::ConnectionClosed),
         }
 
@@ -127,13 +147,20 @@ impl ArchipelagoClient {
             password: password.map(|p| p.to_string()),
             version: network_version(),
             items_handling,
-            tags
-        })).await?;
-        let response = self.recv().await?.ok_or(ArchipelagoError::ConnectionClosed)?;
+            tags,
+        }))
+        .await?;
+        let response = self
+            .recv()
+            .await?
+            .ok_or(ArchipelagoError::ConnectionClosed)?;
 
         match response {
             ServerMessage::Connected(connected) => Ok(connected),
-            received => Err(ArchipelagoError::IllegalResponse { received, expected: "Connected" }),
+            received => Err(ArchipelagoError::IllegalResponse {
+                received,
+                expected: "Connected",
+            }),
         }
     }
 
@@ -141,7 +168,11 @@ impl ArchipelagoClient {
      * Basic chat command which sends text to the server to be distributed to other clients.
      */
     pub async fn say(&mut self, message: &str) -> Result<(), ArchipelagoError> {
-        Ok(self.send(ClientMessage::Say(Say { text: message.to_string() })).await?)
+        Ok(self
+            .send(ClientMessage::Say(Say {
+                text: message.to_string(),
+            }))
+            .await?)
     }
 
     /**
@@ -162,12 +193,14 @@ impl ArchipelagoClient {
     }
 
     /**
-     * Sent to server to inform it of locations that the client has checked. 
+     * Sent to server to inform it of locations that the client has checked.
      *
      * Used to inform the server of new checks that are made, as well as to sync state.
      */
     pub async fn location_checks(&mut self, locations: Vec<i32>) -> Result<(), ArchipelagoError> {
-        Ok(self.send(ClientMessage::LocationChecks(LocationChecks { locations })).await?)
+        Ok(self
+            .send(ClientMessage::LocationChecks(LocationChecks { locations }))
+            .await?)
     }
 
     /**
@@ -175,8 +208,16 @@ impl ArchipelagoClient {
      *
      * Useful in cases in which the item may appear in the game world, such as 'ledge items' in A Link to the Past. Non-LocationInfo packets will be buffered
      */
-    pub async fn location_scouts(&mut self, locations: Vec<i32>, create_as_hint: i32) -> Result<LocationInfo, ArchipelagoError> {
-        self.send(ClientMessage::LocationScouts(LocationScouts { locations, create_as_hint })).await?;
+    pub async fn location_scouts(
+        &mut self,
+        locations: Vec<i32>,
+        create_as_hint: i32,
+    ) -> Result<LocationInfo, ArchipelagoError> {
+        self.send(ClientMessage::LocationScouts(LocationScouts {
+            locations,
+            create_as_hint,
+        }))
+        .await?;
         while let Some(response) = self.recv().await? {
             match response {
                 ServerMessage::LocationInfo(items) => return Ok(items),
@@ -193,14 +234,29 @@ impl ArchipelagoClient {
      * Examples include readiness or goal completion. (Example: defeated Ganon in A Link to the Past)
      */
     pub async fn status_update(&mut self, status: ClientStatus) -> Result<(), ArchipelagoError> {
-        Ok(self.send(ClientMessage::StatusUpdate(StatusUpdate { status })).await?)
+        Ok(self
+            .send(ClientMessage::StatusUpdate(StatusUpdate { status }))
+            .await?)
     }
 
     /**
      * Send this message to the server, tell it which clients should receive the message and the server will forward the message to all those targets to which any one requirement applies.
      */
-    pub async fn bounce(&mut self, games: Option<Vec<String>>, slots: Option<Vec<String>>, tags: Option<Vec<String>>, data: serde_json::Value) -> Result<(), ArchipelagoError> {
-        Ok(self.send(ClientMessage::Bounce(Bounce { games, slots, tags, data })).await?)
+    pub async fn bounce(
+        &mut self,
+        games: Option<Vec<String>>,
+        slots: Option<Vec<String>>,
+        tags: Option<Vec<String>>,
+        data: serde_json::Value,
+    ) -> Result<(), ArchipelagoError> {
+        Ok(self
+            .send(ClientMessage::Bounce(Bounce {
+                games,
+                slots,
+                tags,
+                data,
+            }))
+            .await?)
     }
 
     /**
@@ -226,8 +282,20 @@ impl ArchipelagoClient {
      *
      * Values for keys in the data storage can be retrieved with a Get package, or monitored with a SetNotify package. Non-SetReply responses are buffered
      */
-    pub async fn set(&mut self, key: String, default: serde_json::Value, want_reply: bool, operations: Vec<DataStorageOperation>) -> Result<SetReply, ArchipelagoError> {
-        self.send(ClientMessage::Set(Set { key, default, want_reply, operations })).await?;
+    pub async fn set(
+        &mut self,
+        key: String,
+        default: serde_json::Value,
+        want_reply: bool,
+        operations: Vec<DataStorageOperation>,
+    ) -> Result<SetReply, ArchipelagoError> {
+        self.send(ClientMessage::Set(Set {
+            key,
+            default,
+            want_reply,
+            operations,
+        }))
+        .await?;
         while let Some(response) = self.recv().await? {
             match response {
                 ServerMessage::SetReply(items) => return Ok(items),
@@ -239,14 +307,15 @@ impl ArchipelagoClient {
     }
 }
 
-
-async fn recv_messages(ws: &mut WebSocketStream<MaybeTlsStream<TcpStream>>) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
+async fn recv_messages(
+    ws: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
-        Ok(Message::Text(response)) => Some(serde_json::from_str::<Vec<ServerMessage>>(&response)
-            .map_err(|e| e.into())),
+        Ok(Message::Text(response)) => {
+            Some(serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| e.into()))
+        }
         Ok(Message::Close(_)) => Some(Err(ArchipelagoError::ConnectionClosed)),
         Ok(msg) => Some(Err(ArchipelagoError::NonTextWebsocketResult(msg))),
         Err(e) => Some(Err(e.into())),
     }
 }
-
