@@ -195,7 +195,6 @@ pub struct RoomInfo {
     pub hint_cost: i32,
     pub location_check_points: i32,
     pub games: Vec<String>,
-    pub datapackage_version: i32,
     pub datapackage_versions: HashMap<String, i32>,
     pub seed_name: String,
     pub time: f32,
