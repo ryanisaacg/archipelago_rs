@@ -229,10 +229,22 @@ pub struct LocationInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RoomUpdate {
-    pub hint_points: i32,
-    pub players: Vec<NetworkPlayer>,
-    pub checked_locations: Vec<i32>,
-    pub missing_locations: Vec<i32>,
+    // Copied from RoomInfo
+    pub version: Option<NetworkVersion>,
+    pub tags: Option<Vec<String>>,
+    pub password: Option<bool>,
+    pub permissions: Option<HashMap<String, Permission>>,
+    pub hint_cost: Option<i32>,
+    pub location_check_points: Option<i32>,
+    pub games: Option<Vec<String>>,
+    pub datapackage_versions: Option<HashMap<String, i32>>,
+    pub seed_name: Option<String>,
+    pub time: Option<f32>,
+    // Exclusive to RoomUpdate
+    pub hint_points: Option<i32>,
+    pub players: Option<Vec<NetworkPlayer>>,
+    pub checked_locations: Option<Vec<i32>>,
+    pub missing_locations: Option<Vec<i32>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
