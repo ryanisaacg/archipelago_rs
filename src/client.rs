@@ -1,4 +1,7 @@
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{
+    stream::{SplitSink, SplitStream},
+    SinkExt, Stream, StreamExt,
+};
 use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
@@ -305,10 +308,133 @@ impl ArchipelagoClient {
 
         Err(ArchipelagoError::ConnectionClosed)
     }
+
+    /**
+     * Split the client into two parts, one to handle sending and one to handle receiving.
+     *
+     * This removes access to a few convenience methods (like `get` or `set`) because it's
+     * there's now extra coordination required to match a read and write, but it brings
+     * the benefits of allowing simultaneous reading and writing.
+     */
+    pub fn split(self) -> (ArchipelagoClientSender, ArchipelagoClientReceiver) {
+        let Self {
+            ws,
+            room_info,
+            message_buffer,
+            data_package,
+        } = self;
+        let (send, recv) = ws.split();
+        (
+            ArchipelagoClientSender { ws: send },
+            ArchipelagoClientReceiver {
+                ws: recv,
+                room_info,
+                message_buffer,
+                data_package,
+            },
+        )
+    }
+}
+
+/**
+ * Once split, this struct handles the sending-side of your connection
+ *
+ * For helper method docs, see ArchipelagoClient. Helper methods that require
+ * both sending and receiving are intentionally unavailable; for those messages,
+ * use `send`.
+ */
+pub struct ArchipelagoClientSender {
+    ws: SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>,
+}
+
+impl ArchipelagoClientSender {
+    pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
+        let request = serde_json::to_string(&[message])?;
+        self.ws.send(Message::Text(request)).await?;
+
+        Ok(())
+    }
+
+    pub async fn say(&mut self, message: &str) -> Result<(), ArchipelagoError> {
+        Ok(self
+            .send(ClientMessage::Say(Say {
+                text: message.to_string(),
+            }))
+            .await?)
+    }
+
+    pub async fn location_checks(&mut self, locations: Vec<i32>) -> Result<(), ArchipelagoError> {
+        Ok(self
+            .send(ClientMessage::LocationChecks(LocationChecks { locations }))
+            .await?)
+    }
+
+    pub async fn status_update(&mut self, status: ClientStatus) -> Result<(), ArchipelagoError> {
+        Ok(self
+            .send(ClientMessage::StatusUpdate(StatusUpdate { status }))
+            .await?)
+    }
+
+    pub async fn bounce(
+        &mut self,
+        games: Option<Vec<String>>,
+        slots: Option<Vec<String>>,
+        tags: Option<Vec<String>>,
+        data: serde_json::Value,
+    ) -> Result<(), ArchipelagoError> {
+        Ok(self
+            .send(ClientMessage::Bounce(Bounce {
+                games,
+                slots,
+                tags,
+                data,
+            }))
+            .await?)
+    }
+}
+
+/**
+ * Once split, this struct handles the receiving-side of your connection
+ *
+ * For helper method docs, see ArchipelagoClient. Helper methods that require
+ * both sending and receiving are intentionally unavailable; for those messages,
+ * use `recv`.
+ */
+pub struct ArchipelagoClientReceiver {
+    ws: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
+    room_info: RoomInfo,
+    message_buffer: Vec<ServerMessage>,
+    data_package: Option<DataPackageObject>,
+}
+
+impl ArchipelagoClientReceiver {
+    pub async fn recv(&mut self) -> Result<Option<ServerMessage>, ArchipelagoError> {
+        if let Some(message) = self.message_buffer.pop() {
+            return Ok(Some(message));
+        }
+        let messages = recv_messages(&mut self.ws).await;
+        if let Some(result) = messages {
+            let mut messages = result?;
+            messages.reverse();
+            let first = messages.pop();
+            self.message_buffer = messages;
+            Ok(first)
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn room_info(&self) -> &RoomInfo {
+        &self.room_info
+    }
+
+    pub fn data_package(&self) -> Option<&DataPackageObject> {
+        self.data_package.as_ref()
+    }
 }
 
 async fn recv_messages(
-    ws: &mut WebSocketStream<MaybeTlsStream<TcpStream>>,
+    mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + std::marker::Unpin,
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
         Ok(Message::Text(response)) => {
