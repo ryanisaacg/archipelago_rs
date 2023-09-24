@@ -6,11 +6,7 @@ async fn main() -> anyhow::Result<()> {
     // Connect to AP server
     let server = prompt("Connect to what AP server?")?;
 
-    let mut url = String::new();
-    url.push_str("ws://");
-    url.push_str(&server);
-
-    let mut client = ArchipelagoClient::new(&url).await?;
+    let mut client = ArchipelagoClient::new(&server).await?;
     println!("Connected!");
 
     // Connect to a given slot on the server

@@ -41,7 +41,21 @@ impl ArchipelagoClient {
      * Create an instance of the client and connect to the server on the given URL
      */
     pub async fn new(url: &str) -> Result<ArchipelagoClient, ArchipelagoError> {
-        let (mut ws, _) = connect_async(url).await?;
+        // Attempt WSS, downgrade to WS if the TLS handshake fails
+        let mut wss_url = String::new();
+        wss_url.push_str("wss://");
+        wss_url.push_str(url);
+        let (mut ws, _) = match connect_async(&wss_url).await {
+            Ok(result) => result,
+            Err(tungstenite::error::Error::Tls(_)) => {
+                let mut ws_url = String::new();
+                ws_url.push_str("ws://");
+                ws_url.push_str(url);
+                connect_async(&ws_url).await?
+            }
+            Err(error) => return Err(ArchipelagoError::NetworkError(error)),
+        };
+
         let response = recv_messages(&mut ws)
             .await
             .ok_or(ArchipelagoError::ConnectionClosed)??;
