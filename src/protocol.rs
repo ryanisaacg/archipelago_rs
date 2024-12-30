@@ -11,6 +11,7 @@ pub enum ClientMessage {
     Sync,
     LocationChecks(LocationChecks),
     LocationScouts(LocationScouts),
+    UpdateHint(UpdateHint),
     StatusUpdate(StatusUpdate),
     Say(Say),
     GetDataPackage(GetDataPackage),
@@ -127,6 +128,23 @@ pub struct LocationChecks {
 pub struct LocationScouts {
     pub locations: Vec<i32>,
     pub create_as_hint: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateHint {
+    pub player: i32,
+    pub location: i32,
+    pub status: HintStatus,
+}
+
+#[derive(Debug, Serialize_repr, Deserialize_repr)]
+#[repr(u16)]
+pub enum HintStatus {
+    HintFound = 0,
+    HintUnspecified = 1,
+    HintNoPriority = 10,
+    HintAvoid = 20,
+    HintPriority = 30,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
