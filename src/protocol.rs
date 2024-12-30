@@ -298,22 +298,138 @@ pub struct Print {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PrintJSON {
-    pub data: Vec<JSONMessagePart>,
-    pub r#type: Option<String>,
-    pub receiving: Option<i32>,
-    pub item: Option<NetworkItem>,
-    pub found: Option<bool>,
-    pub countdown: Option<i32>,
+#[serde(tag = "type")]
+pub enum PrintJSON {
+    ItemSend {
+        data: Vec<JSONMessagePart>,
+        receiving: i32,
+        item: NetworkItem,
+    },
+    ItemCheat {
+        data: Vec<JSONMessagePart>,
+        receiving: i32,
+        item: NetworkItem,
+        team: i32,
+    },
+    Hint {
+        data: Vec<JSONMessagePart>,
+        receiving: i32,
+        item: NetworkItem,
+        found: bool,
+    },
+    Join {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+        tags: Vec<String>,
+    },
+    Part {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Chat {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+        message: String,
+    },
+    ServerChat {
+        data: Vec<JSONMessagePart>,
+        message: String,
+    },
+    Tutorial { data: Vec<JSONMessagePart> },
+    TagsChanged {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+        tags: Vec<String>,
+    },
+    CommandResult { data: Vec<JSONMessagePart> },
+    AdminCommandResult { data: Vec<JSONMessagePart> },
+    Goal {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Release {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Collect {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Countdown {
+        data: Vec<JSONMessagePart>,
+        countdown: i32,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct JSONMessagePart {
-    pub r#type: Option<String>,
-    pub text: Option<String>,
-    pub color: Option<String>,
-    pub flags: Option<i32>,
-    pub player: Option<i32>,
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum JSONMessagePart {
+    PlayerId {
+        text: String,
+        player: i32,
+    },
+    PlayerName {
+        text: String,
+    },
+    ItemId {
+        text: String,
+        flags: i32,
+        player: i32,
+    },
+    ItemName {
+        text: String,
+        flags: i32,
+        player: i32,
+    },
+    LocationId {
+        text: String,
+        player: i32,
+    },
+    LocationName {
+        text: String,
+        player: i32,
+    },
+    EntranceName {
+        text: String,
+    },
+    Color {
+        text: String,
+        color: JSONColor,
+    },
+    #[serde(untagged)]
+    Text {
+        text: String,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum JSONColor {
+    Bold,
+    Underline,
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+    BlackBg,
+    RedBg,
+    GreenBg,
+    YellowBg,
+    BlueBg,
+    MagentaBg,
+    CyanBg,
+    WhiteBg,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
