@@ -165,6 +165,7 @@ impl ArchipelagoClient {
             version: network_version(),
             items_handling,
             tags,
+            request_slot_data: true,
         }))
         .await?;
         let response = self

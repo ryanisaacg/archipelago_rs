@@ -102,12 +102,14 @@ pub fn network_version() -> NetworkVersion {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Connect {
     pub password: Option<String>,
+    pub game: String,
     pub name: String,
+    pub uuid: String,
     pub version: NetworkVersion,
     pub items_handling: Option<i32>,
     pub tags: Vec<String>,
-    pub uuid: String,
-    pub game: String,
+    #[serde(rename = "slot_data")]
+    pub request_slot_data: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -189,6 +191,7 @@ pub struct SetNotify {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RoomInfo {
     pub version: NetworkVersion,
+    pub generator_version: NetworkVersion,
     pub tags: Vec<String>,
     #[serde(rename = "password")]
     pub password_required: bool,
@@ -218,6 +221,7 @@ pub struct Connected {
     pub checked_locations: Vec<i32>,
     pub slot_data: Value,
     pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
+    pub hint_points: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -292,6 +296,7 @@ pub struct GameData {
     pub item_name_to_id: HashMap<String, i32>,
     pub location_name_to_id: HashMap<String, i32>,
     pub version: i32,
+    pub checksum: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
