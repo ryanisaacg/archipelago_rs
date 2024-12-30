@@ -194,9 +194,26 @@ pub struct Set {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DataStorageOperation {
-    pub replace: String, // TODO: enum-ify?
-    pub value: Value,
+#[serde(tag = "operation", content = "value", rename_all = "snake_case")]
+pub enum DataStorageOperation {
+    Replace(serde_json::Value),
+    Default,
+    Add(serde_json::Value),
+    Mul(serde_json::Value),
+    Pow(serde_json::Value),
+    Mod(serde_json::Value),
+    Floor,
+    Ceil,
+    Max(serde_json::Value),
+    Min(serde_json::Value),
+    And(serde_json::Value),
+    Or(serde_json::Value),
+    Xor(serde_json::Value),
+    LeftShift(serde_json::Value),
+    RightShift(serde_json::Value),
+    Remove(serde_json::Value),
+    Pop(serde_json::Value),
+    Update(serde_json::Value),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
