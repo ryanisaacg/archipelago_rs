@@ -190,7 +190,8 @@ pub struct SetNotify {
 pub struct RoomInfo {
     pub version: NetworkVersion,
     pub tags: Vec<String>,
-    pub password: bool,
+    #[serde(rename = "password")]
+    pub password_required: bool,
     pub permissions: HashMap<String, Permission>,
     pub hint_cost: i32,
     pub location_check_points: i32,
@@ -235,7 +236,8 @@ pub struct RoomUpdate {
     // Copied from RoomInfo
     pub version: Option<NetworkVersion>,
     pub tags: Option<Vec<String>>,
-    pub password: Option<bool>,
+    #[serde(rename = "password")]
+    pub password_required: bool,
     pub permissions: Option<HashMap<String, Permission>>,
     pub hint_cost: Option<i32>,
     pub location_check_points: Option<i32>,
