@@ -11,6 +11,7 @@ pub enum ClientMessage {
     Sync,
     LocationChecks(LocationChecks),
     LocationScouts(LocationScouts),
+    UpdateHint(UpdateHint),
     StatusUpdate(StatusUpdate),
     Say(Say),
     GetDataPackage(GetDataPackage),
@@ -102,12 +103,14 @@ pub fn network_version() -> NetworkVersion {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Connect {
     pub password: Option<String>,
+    pub game: String,
     pub name: String,
+    pub uuid: String,
     pub version: NetworkVersion,
     pub items_handling: Option<i32>,
     pub tags: Vec<String>,
-    pub uuid: String,
-    pub game: String,
+    #[serde(rename = "slot_data")]
+    pub request_slot_data: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -125,6 +128,23 @@ pub struct LocationChecks {
 pub struct LocationScouts {
     pub locations: Vec<i32>,
     pub create_as_hint: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateHint {
+    pub player: i32,
+    pub location: i32,
+    pub status: HintStatus,
+}
+
+#[derive(Debug, Serialize_repr, Deserialize_repr)]
+#[repr(u16)]
+pub enum HintStatus {
+    HintFound = 0,
+    HintUnspecified = 1,
+    HintNoPriority = 10,
+    HintAvoid = 20,
+    HintPriority = 30,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -174,9 +194,26 @@ pub struct Set {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DataStorageOperation {
-    pub replace: String, // TODO: enum-ify?
-    pub value: Value,
+#[serde(tag = "operation", content = "value", rename_all = "snake_case")]
+pub enum DataStorageOperation {
+    Replace(serde_json::Value),
+    Default,
+    Add(serde_json::Value),
+    Mul(serde_json::Value),
+    Pow(serde_json::Value),
+    Mod(serde_json::Value),
+    Floor,
+    Ceil,
+    Max(serde_json::Value),
+    Min(serde_json::Value),
+    And(serde_json::Value),
+    Or(serde_json::Value),
+    Xor(serde_json::Value),
+    LeftShift(serde_json::Value),
+    RightShift(serde_json::Value),
+    Remove(serde_json::Value),
+    Pop(serde_json::Value),
+    Update(serde_json::Value),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -189,8 +226,10 @@ pub struct SetNotify {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RoomInfo {
     pub version: NetworkVersion,
+    pub generator_version: NetworkVersion,
     pub tags: Vec<String>,
-    pub password: bool,
+    #[serde(rename = "password")]
+    pub password_required: bool,
     pub permissions: HashMap<String, Permission>,
     pub hint_cost: i32,
     pub location_check_points: i32,
@@ -217,6 +256,7 @@ pub struct Connected {
     pub checked_locations: Vec<i32>,
     pub slot_data: Value,
     pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
+    pub hint_points: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -235,7 +275,8 @@ pub struct RoomUpdate {
     // Copied from RoomInfo
     pub version: Option<NetworkVersion>,
     pub tags: Option<Vec<String>>,
-    pub password: Option<bool>,
+    #[serde(rename = "password")]
+    pub password_required: bool,
     pub permissions: Option<HashMap<String, Permission>>,
     pub hint_cost: Option<i32>,
     pub location_check_points: Option<i32>,
@@ -257,22 +298,138 @@ pub struct Print {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PrintJSON {
-    pub data: Vec<JSONMessagePart>,
-    pub r#type: Option<String>,
-    pub receiving: Option<i32>,
-    pub item: Option<NetworkItem>,
-    pub found: Option<bool>,
-    pub countdown: Option<i32>,
+#[serde(tag = "type")]
+pub enum PrintJSON {
+    ItemSend {
+        data: Vec<JSONMessagePart>,
+        receiving: i32,
+        item: NetworkItem,
+    },
+    ItemCheat {
+        data: Vec<JSONMessagePart>,
+        receiving: i32,
+        item: NetworkItem,
+        team: i32,
+    },
+    Hint {
+        data: Vec<JSONMessagePart>,
+        receiving: i32,
+        item: NetworkItem,
+        found: bool,
+    },
+    Join {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+        tags: Vec<String>,
+    },
+    Part {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Chat {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+        message: String,
+    },
+    ServerChat {
+        data: Vec<JSONMessagePart>,
+        message: String,
+    },
+    Tutorial { data: Vec<JSONMessagePart> },
+    TagsChanged {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+        tags: Vec<String>,
+    },
+    CommandResult { data: Vec<JSONMessagePart> },
+    AdminCommandResult { data: Vec<JSONMessagePart> },
+    Goal {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Release {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Collect {
+        data: Vec<JSONMessagePart>,
+        team: i32,
+        slot: i32,
+    },
+    Countdown {
+        data: Vec<JSONMessagePart>,
+        countdown: i32,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct JSONMessagePart {
-    pub r#type: Option<String>,
-    pub text: Option<String>,
-    pub color: Option<String>,
-    pub flags: Option<i32>,
-    pub player: Option<i32>,
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum JSONMessagePart {
+    PlayerId {
+        text: String,
+        player: i32,
+    },
+    PlayerName {
+        text: String,
+    },
+    ItemId {
+        text: String,
+        flags: i32,
+        player: i32,
+    },
+    ItemName {
+        text: String,
+        flags: i32,
+        player: i32,
+    },
+    LocationId {
+        text: String,
+        player: i32,
+    },
+    LocationName {
+        text: String,
+        player: i32,
+    },
+    EntranceName {
+        text: String,
+    },
+    Color {
+        text: String,
+        color: JSONColor,
+    },
+    #[serde(untagged)]
+    Text {
+        text: String,
+    },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum JSONColor {
+    Bold,
+    Underline,
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+    BlackBg,
+    RedBg,
+    GreenBg,
+    YellowBg,
+    BlueBg,
+    MagentaBg,
+    CyanBg,
+    WhiteBg,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -290,6 +447,7 @@ pub struct GameData {
     pub item_name_to_id: HashMap<String, i32>,
     pub location_name_to_id: HashMap<String, i32>,
     pub version: i32,
+    pub checksum: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
