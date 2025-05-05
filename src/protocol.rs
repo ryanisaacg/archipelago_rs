@@ -467,12 +467,12 @@ pub struct InvalidPacket {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Retrieved {
-    keys: Value,
+    pub keys: Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SetReply {
-    key: String,
-    value: Value,
-    original_value: Value,
+    pub key: String,
+    pub value: Value,
+    pub original_value: Value,
 }

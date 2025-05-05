@@ -456,6 +456,7 @@ async fn recv_messages(
             Some(serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| e.into()))
         }
         Ok(Message::Close(_)) => Some(Err(ArchipelagoError::ConnectionClosed)),
+        Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => None,
         Ok(msg) => Some(Err(ArchipelagoError::NonTextWebsocketResult(msg))),
         Err(e) => Some(Err(e.into())),
     }
