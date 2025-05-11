@@ -92,8 +92,8 @@ pub struct NetworkSlot {
 pub fn network_version() -> NetworkVersion {
     NetworkVersion {
         major: 0,
-        minor: 3,
-        build: 7,
+        minor: 5,
+        build: 1,
         class: "Version".to_string(),
     }
 }
@@ -446,7 +446,7 @@ pub struct DataPackageObject {
 pub struct GameData {
     pub item_name_to_id: HashMap<String, i32>,
     pub location_name_to_id: HashMap<String, i32>,
-    pub version: i32,
+    //pub version: i32, // Shouldn't need this again
     pub checksum: String,
 }
 
