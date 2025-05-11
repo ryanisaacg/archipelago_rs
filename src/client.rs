@@ -6,7 +6,7 @@ use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tungstenite::protocol::Message;
-
+use tungstenite::Utf8Bytes;
 use crate::protocol::*;
 
 #[derive(Error, Debug)]
@@ -116,7 +116,7 @@ impl ArchipelagoClient {
 
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
         let request = serde_json::to_string(&[message])?;
-        self.ws.send(Message::Text(request)).await?;
+        self.ws.send(Message::Text(Utf8Bytes::from(request))).await?;
 
         Ok(())
     }
@@ -365,7 +365,7 @@ pub struct ArchipelagoClientSender {
 impl ArchipelagoClientSender {
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
         let request = serde_json::to_string(&[message])?;
-        self.ws.send(Message::Text(request)).await?;
+        self.ws.send(Message::Text(Utf8Bytes::from(request))).await?;
 
         Ok(())
     }
