@@ -378,7 +378,6 @@ pub enum PrintJSON {
 pub enum JSONMessagePart {
     PlayerId {
         text: String,
-        player: i32,
     },
     PlayerName {
         text: String,
