@@ -91,7 +91,9 @@ impl ArchipelagoClient {
         client
             .send(ClientMessage::GetDataPackage(GetDataPackage { games }))
             .await?;
+        println!("Sent DP request");
         let response = client.recv().await?;
+        println!("Received DP response {:?}", response);
         match response {
             Some(ServerMessage::DataPackage(pkg)) => client.data_package = Some(pkg.data),
             Some(received) => {
@@ -132,6 +134,7 @@ impl ArchipelagoClient {
             return Ok(Some(message));
         }
         let messages = recv_messages(&mut self.ws).await;
+        println!("Received DP response {:?}", messages);
         if let Some(result) = messages {
             let mut messages = result?;
             messages.reverse();
@@ -167,7 +170,7 @@ impl ArchipelagoClient {
             tags,
             request_slot_data: true,
         }))
-        .await?;
+            .await?;
         let response = self
             .recv()
             .await?
@@ -215,7 +218,7 @@ impl ArchipelagoClient {
      *
      * Used to inform the server of new checks that are made, as well as to sync state.
      */
-    pub async fn location_checks(&mut self, locations: Vec<i32>) -> Result<(), ArchipelagoError> {
+    pub async fn location_checks(&mut self, locations: Vec<i64>) -> Result<(), ArchipelagoError> {
         Ok(self
             .send(ClientMessage::LocationChecks(LocationChecks { locations }))
             .await?)
@@ -228,14 +231,14 @@ impl ArchipelagoClient {
      */
     pub async fn location_scouts(
         &mut self,
-        locations: Vec<i32>,
+        locations: Vec<i64>,
         create_as_hint: i32,
     ) -> Result<LocationInfo, ArchipelagoError> {
         self.send(ClientMessage::LocationScouts(LocationScouts {
             locations,
             create_as_hint,
         }))
-        .await?;
+            .await?;
         while let Some(response) = self.recv().await? {
             match response {
                 ServerMessage::LocationInfo(items) => return Ok(items),
@@ -313,7 +316,7 @@ impl ArchipelagoClient {
             want_reply,
             operations,
         }))
-        .await?;
+            .await?;
         while let Some(response) = self.recv().await? {
             match response {
                 ServerMessage::SetReply(items) => return Ok(items),
@@ -378,7 +381,7 @@ impl ArchipelagoClientSender {
             .await?)
     }
 
-    pub async fn location_checks(&mut self, locations: Vec<i32>) -> Result<(), ArchipelagoError> {
+    pub async fn location_checks(&mut self, locations: Vec<i64>) -> Result<(), ArchipelagoError> {
         Ok(self
             .send(ClientMessage::LocationChecks(LocationChecks { locations }))
             .await?)

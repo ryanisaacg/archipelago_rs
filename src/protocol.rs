@@ -67,8 +67,8 @@ pub struct NetworkPlayer {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NetworkItem {
-    pub item: i32,
-    pub location: i32,
+    pub item: i64,
+    pub location: i64,
     pub player: i32,
     pub flags: i32,
 }
@@ -121,19 +121,19 @@ pub struct ConnectUpdate {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LocationChecks {
-    pub locations: Vec<i32>,
+    pub locations: Vec<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LocationScouts {
-    pub locations: Vec<i32>,
+    pub locations: Vec<i64>,
     pub create_as_hint: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateHint {
     pub player: i32,
-    pub location: i32,
+    pub location: i64,
     pub status: HintStatus,
 }
 
@@ -252,8 +252,8 @@ pub struct Connected {
     pub team: i32,
     pub slot: i32,
     pub players: Vec<NetworkPlayer>,
-    pub missing_locations: Vec<i32>,
-    pub checked_locations: Vec<i32>,
+    pub missing_locations: Vec<i64>,
+    pub checked_locations: Vec<i64>,
     pub slot_data: Value,
     pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
     pub hint_points: i32,
@@ -289,8 +289,8 @@ pub struct RoomUpdate {
     // Exclusive to RoomUpdate
     pub hint_points: Option<i32>,
     pub players: Option<Vec<NetworkPlayer>>,
-    pub checked_locations: Option<Vec<i32>>,
-    pub missing_locations: Option<Vec<i32>>,
+    pub checked_locations: Option<Vec<i64>>,
+    pub missing_locations: Option<Vec<i64>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -445,8 +445,8 @@ pub struct DataPackageObject {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameData {
-    pub item_name_to_id: HashMap<String, i32>,
-    pub location_name_to_id: HashMap<String, i32>,
+    pub item_name_to_id: HashMap<String, i64>,
+    pub location_name_to_id: HashMap<String, i64>,
     //pub version: i32, // Shouldn't need this again
     pub checksum: String,
 }
