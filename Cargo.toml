@@ -12,6 +12,8 @@ serde_repr = "0.1"
 thiserror = "2.0.12"
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
 tokio = "1.45.0"
+# https://github.com/SvizelPritula/tungstenite-rs/tree/permessage-deflate 
+# Switch tungstenite to the above if you need compressed websockets. Maybe this'll get merged in the future
 tokio-tungstenite = { version = "0.26.2", features = ["native-tls"] }
 tungstenite = "0.26.2"
 

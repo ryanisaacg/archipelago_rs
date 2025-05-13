@@ -196,24 +196,24 @@ pub struct Set {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "operation", content = "value", rename_all = "snake_case")]
 pub enum DataStorageOperation {
-    Replace(serde_json::Value),
+    Replace(Value),
     Default,
-    Add(serde_json::Value),
-    Mul(serde_json::Value),
-    Pow(serde_json::Value),
-    Mod(serde_json::Value),
+    Add(Value),
+    Mul(Value),
+    Pow(Value),
+    Mod(Value),
     Floor,
     Ceil,
-    Max(serde_json::Value),
-    Min(serde_json::Value),
-    And(serde_json::Value),
-    Or(serde_json::Value),
-    Xor(serde_json::Value),
-    LeftShift(serde_json::Value),
-    RightShift(serde_json::Value),
-    Remove(serde_json::Value),
-    Pop(serde_json::Value),
-    Update(serde_json::Value),
+    Max(Value),
+    Min(Value),
+    And(Value),
+    Or(Value),
+    Xor(Value),
+    LeftShift(Value),
+    RightShift(Value),
+    Remove(Value),
+    Pop(Value),
+    Update(Value),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -275,6 +275,7 @@ pub struct RoomUpdate {
     // Copied from RoomInfo
     pub version: Option<NetworkVersion>,
     pub tags: Option<Vec<String>>,
+    #[serde(default)]
     #[serde(rename = "password")]
     pub password_required: bool,
     pub permissions: Option<HashMap<String, Permission>>,
