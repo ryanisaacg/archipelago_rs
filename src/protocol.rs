@@ -367,6 +367,10 @@ pub enum PrintJSON {
         data: Vec<JSONMessagePart>,
         countdown: i32,
     },
+    #[serde(untagged)]
+    Text {
+        data: Vec<JSONMessagePart>,
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
