@@ -433,17 +433,17 @@ pub enum JSONColor {
     WhiteBg,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DataPackage {
     pub data: DataPackageObject,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DataPackageObject {
     pub games: HashMap<String, GameData>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GameData {
     pub item_name_to_id: HashMap<String, i64>,
     pub location_name_to_id: HashMap<String, i64>,
