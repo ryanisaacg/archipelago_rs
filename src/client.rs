@@ -1,3 +1,4 @@
+use crate::protocol::*;
 use futures_util::{
     stream::{SplitSink, SplitStream},
     SinkExt, Stream, StreamExt,
@@ -7,7 +8,6 @@ use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
 use tungstenite::protocol::Message;
 use tungstenite::Utf8Bytes;
-use crate::protocol::*;
 
 #[derive(Error, Debug)]
 pub enum ArchipelagoError {
@@ -88,9 +88,16 @@ impl ArchipelagoClient {
         mut games: Option<Vec<String>>,
     ) -> Result<ArchipelagoClient, ArchipelagoError> {
         let mut client = Self::new(url).await?;
-        if games.is_none() { // If None, request the games that are part of the connected room.
+        if games.is_none() {
+            // If None, request the games that are part of the connected room.
             let mut list: Vec<String> = vec![];
-            client.room_info.datapackage_checksums.keys().for_each(|name| { list.push(name.clone()); });
+            client
+                .room_info
+                .datapackage_checksums
+                .keys()
+                .for_each(|name| {
+                    list.push(name.clone());
+                });
             games = Some(list);
         }
         client
@@ -121,7 +128,9 @@ impl ArchipelagoClient {
 
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
         let request = serde_json::to_string(&[message])?;
-        self.ws.send(Message::Text(Utf8Bytes::from(request))).await?;
+        self.ws
+            .send(Message::Text(Utf8Bytes::from(request)))
+            .await?;
 
         Ok(())
     }
@@ -137,7 +146,6 @@ impl ArchipelagoClient {
             return Ok(Some(message));
         }
         let messages = recv_messages(&mut self.ws).await;
-        println!("Received DP response {:?}", messages);
         if let Some(result) = messages {
             let mut messages = result?;
             messages.reverse();
@@ -173,7 +181,7 @@ impl ArchipelagoClient {
             tags,
             request_slot_data: true,
         }))
-            .await?;
+        .await?;
         let response = self
             .recv()
             .await?
@@ -241,7 +249,7 @@ impl ArchipelagoClient {
             locations,
             create_as_hint,
         }))
-            .await?;
+        .await?;
         while let Some(response) = self.recv().await? {
             match response {
                 ServerMessage::LocationInfo(items) => return Ok(items),
@@ -319,7 +327,7 @@ impl ArchipelagoClient {
             want_reply,
             operations,
         }))
-            .await?;
+        .await?;
         while let Some(response) = self.recv().await? {
             match response {
                 ServerMessage::SetReply(items) => return Ok(items),
@@ -371,7 +379,9 @@ pub struct ArchipelagoClientSender {
 impl ArchipelagoClientSender {
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
         let request = serde_json::to_string(&[message])?;
-        self.ws.send(Message::Text(Utf8Bytes::from(request))).await?;
+        self.ws
+            .send(Message::Text(Utf8Bytes::from(request)))
+            .await?;
 
         Ok(())
     }
@@ -455,11 +465,14 @@ impl ArchipelagoClientReceiver {
 }
 
 async fn recv_messages(
-    mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + std::marker::Unpin,
+    mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + Unpin,
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
         Ok(Message::Text(response)) => {
-            Some(serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| e.into()))
+            Some(serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| {
+                log::error!("Errored message: {}", response);
+                e.into() 
+            }))
         }
         Ok(Message::Close(_)) => Some(Err(ArchipelagoError::ConnectionClosed)),
         Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => None,

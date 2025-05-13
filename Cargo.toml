@@ -16,6 +16,7 @@ tokio = "1.45.0"
 # Switch tungstenite to the above if you need compressed websockets. Maybe this'll get merged in the future
 tokio-tungstenite = { version = "0.26.2", features = ["native-tls"] }
 tungstenite = "0.26.2"
+log = { version = "0.4.27" }
 
 [dev-dependencies]
 anyhow = "1.0"
