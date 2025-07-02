@@ -6,7 +6,7 @@ use futures_util::{
 use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
-use tungstenite::protocol::Message;
+use tungstenite::protocol::{CloseFrame, Message};
 use tungstenite::Utf8Bytes;
 
 #[derive(Error, Debug)]
@@ -194,6 +194,12 @@ impl ArchipelagoClient {
                 expected: "Connected",
             }),
         }
+    }
+
+    /// Disconnect from the room
+    pub async fn disconnect(&mut self, close_frame: Option<CloseFrame>) -> Result<(), tungstenite::Error> {
+        self.ws.close(close_frame).await?;
+        Ok(())
     }
 
     /**
@@ -468,12 +474,12 @@ async fn recv_messages(
     mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + Unpin,
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
-        Ok(Message::Text(response)) => {
-            Some(serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| {
+        Ok(Message::Text(response)) => Some(
+            serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| {
                 log::error!("Errored message: {}", response);
-                e.into() 
-            }))
-        }
+                e.into()
+            }),
+        ),
         Ok(Message::Close(_)) => Some(Err(ArchipelagoError::ConnectionClosed)),
         Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => None,
         Ok(msg) => Some(Err(ArchipelagoError::NonTextWebsocketResult(msg))),
