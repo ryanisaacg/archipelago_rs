@@ -89,11 +89,11 @@ pub struct NetworkSlot {
     pub group_members: Vec<i32>,
 }
 
-pub fn network_version() -> NetworkVersion {
+pub fn network_version() -> NetworkVersion { // I should probably bump this
     NetworkVersion {
         major: 0,
-        minor: 5,
-        build: 1,
+        minor: 6,
+        build: 3,
         class: "Version".to_string(),
     }
 }
@@ -134,7 +134,8 @@ pub struct LocationScouts {
 pub struct UpdateHint {
     pub player: i32,
     pub location: i64,
-    pub status: HintStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<HintStatus>,
 }
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
@@ -244,7 +245,8 @@ pub struct RoomInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectionRefused {
-    pub errors: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -456,9 +458,12 @@ pub struct GameData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Bounced {
-    pub games: Vec<String>,
-    pub slots: Vec<i32>,
-    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub games: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slots: Option<Vec<i32>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
     pub data: Value,
 }
 
