@@ -470,7 +470,9 @@ pub struct Bounced {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
-    pub data: Value,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
