@@ -134,6 +134,7 @@ pub struct LocationScouts {
 pub struct UpdateHint {
     pub player: i32,
     pub location: i64,
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<HintStatus>,
 }
@@ -169,6 +170,7 @@ pub struct Say {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GetDataPackage {
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub games: Option<Vec<String>>,
 }
@@ -245,6 +247,7 @@ pub struct RoomInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectionRefused {
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<String>>,
 }
@@ -458,10 +461,13 @@ pub struct GameData {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Bounced {
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub games: Option<Vec<String>>,
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub slots: Option<Vec<i32>>,
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
     pub data: Value,
