@@ -3,6 +3,7 @@ use futures_util::{
     stream::{SplitSink, SplitStream},
     SinkExt, Stream, StreamExt,
 };
+use serde::Deserialize;
 use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
@@ -470,16 +471,36 @@ impl ArchipelagoClientReceiver {
     }
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum MaybeArray<T> {
+    One(T),
+    Many(Vec<T>),
+}
+
+impl<T> Into<Vec<T>> for MaybeArray<T> {
+    fn into(self) -> Vec<T> {
+        match self {
+            MaybeArray::One(v) => vec![v],
+            MaybeArray::Many(vs) => vs,
+        }
+    }
+}
+
+
 async fn recv_messages(
     mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + Unpin,
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
-        Ok(Message::Text(response)) => Some(
-            serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| {
-                log::error!("Errored message: {}", response);
-                e.into()
-            }),
-        ),
+        Ok(Message::Text(response)) => {
+            let result: Result<MaybeArray<ServerMessage>, _> = serde_json::from_str(&response);
+            Some(result
+                .map(|messages| messages.into())
+                .map_err(|e| {
+                    log::error!("Errored message: {}", response);
+                    e.into()
+                }))
+        },
         Ok(Message::Close(_)) => Some(Err(ArchipelagoError::ConnectionClosed)),
         Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => None,
         Ok(msg) => Some(Err(ArchipelagoError::NonTextWebsocketResult(msg))),
