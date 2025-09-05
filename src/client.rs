@@ -1,3 +1,6 @@
+use serde_with::formats::PreferMany;
+use serde_with::OneOrMany;
+use serde_with::serde_as;
 use crate::protocol::*;
 use futures_util::{
     stream::{SplitSink, SplitStream},
@@ -471,20 +474,11 @@ impl ArchipelagoClientReceiver {
     }
 }
 
+#[serde_as]
 #[derive(Debug, Deserialize)]
-#[serde(untagged)]
-enum MaybeArray {
-    One(ServerMessage),
-    Many(Vec<ServerMessage>),
-}
-
-impl Into<Vec<ServerMessage>> for MaybeArray {
-    fn into(self) -> Vec<ServerMessage> {
-        match self {
-            MaybeArray::One(v) => vec![v],
-            MaybeArray::Many(vs) => vs,
-        }
-    }
+pub struct MessageArray {
+    #[serde_as(as = "OneOrMany<_, PreferMany>")]
+    messages: Vec<ServerMessage>,
 }
 
 
@@ -493,9 +487,10 @@ async fn recv_messages(
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
         Ok(Message::Text(response)) => {
-            let result: Result<MaybeArray, _> = serde_json::from_str(&response);
+            let result: Result<MessageArray, _> = serde_json::from_str(&response);
+
             Some(result
-                .map(|messages| messages.into())
+                .map(|messages| messages.messages.into())
                 .map_err(|e| {
                     log::error!("Errored message: {}", response);
                     e.into()
