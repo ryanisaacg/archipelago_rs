@@ -336,9 +336,15 @@ pub enum PrintJSON {
     },
     Chat {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
-        message: String,
+        #[serde(default)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        team: Option<i32>,
+        #[serde(default)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        slot: Option<i32>,
+        #[serde(default)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        message: Option<String>,
     },
     ServerChat {
         data: Vec<JSONMessagePart>,
