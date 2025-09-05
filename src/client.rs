@@ -473,13 +473,13 @@ impl ArchipelagoClientReceiver {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-enum MaybeArray<T> {
-    One(T),
-    Many(Vec<T>),
+enum MaybeArray {
+    One(ServerMessage),
+    Many(Vec<ServerMessage>),
 }
 
-impl<T> Into<Vec<T>> for MaybeArray<T> {
-    fn into(self) -> Vec<T> {
+impl Into<Vec<ServerMessage>> for MaybeArray {
+    fn into(self) -> Vec<ServerMessage> {
         match self {
             MaybeArray::One(v) => vec![v],
             MaybeArray::Many(vs) => vs,
@@ -493,7 +493,7 @@ async fn recv_messages(
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
         Ok(Message::Text(response)) => {
-            let result: Result<MaybeArray<ServerMessage>, _> = serde_json::from_str(&response);
+            let result: Result<MaybeArray, _> = serde_json::from_str(&response);
             Some(result
                 .map(|messages| messages.into())
                 .map_err(|e| {
