@@ -1,12 +1,8 @@
-use serde_with::formats::PreferMany;
-use serde_with::OneOrMany;
-use serde_with::serde_as;
 use crate::protocol::*;
 use futures_util::{
     stream::{SplitSink, SplitStream},
     SinkExt, Stream, StreamExt,
 };
-use serde::Deserialize;
 use thiserror::Error;
 use tokio::net::TcpStream;
 use tokio_tungstenite::{connect_async, MaybeTlsStream, WebSocketStream};
@@ -474,23 +470,15 @@ impl ArchipelagoClientReceiver {
     }
 }
 
-#[serde_as]
-#[derive(Debug, Deserialize)]
-pub struct MessageArray {
-    #[serde_as(as = "OneOrMany<_, PreferMany>")]
-    messages: Vec<ServerMessage>,
-}
-
-
 async fn recv_messages(
     mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + Unpin,
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
     match ws.next().await? {
         Ok(Message::Text(response)) => {
-            let result: Result<MessageArray, _> = serde_json::from_str(&response);
+            let result: Result<Vec<ServerMessage>, _> = serde_json::from_str(&response);
 
             Some(result
-                .map(|messages| messages.messages.into())
+                .map(|messages| messages.into())
                 .map_err(|e| {
                     log::error!("Errored message: {}", response);
                     e.into()
