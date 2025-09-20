@@ -8,6 +8,7 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 #[serde(tag = "cmd")]
 pub enum ClientMessage {
     Connect(Connect),
+    ConnectUpdate(ConnectUpdate),
     Sync,
     LocationChecks(LocationChecks),
     LocationScouts(LocationScouts),
