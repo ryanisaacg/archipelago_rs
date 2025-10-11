@@ -261,7 +261,7 @@ pub struct Connected {
     pub missing_locations: Vec<i64>,
     pub checked_locations: Vec<i64>,
     pub slot_data: Value,
-    pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
+    pub slot_info: HashMap<i32, NetworkSlot>,
     pub hint_points: i32,
 }
 
