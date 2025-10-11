@@ -1,8 +1,10 @@
+use serde_with::DisplayFromStr;
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde_with::serde_as;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
@@ -90,7 +92,8 @@ pub struct NetworkSlot {
     pub group_members: Vec<i32>,
 }
 
-pub fn network_version() -> NetworkVersion { // I should probably bump this
+pub fn network_version() -> NetworkVersion {
+    // I should probably bump this
     NetworkVersion {
         major: 0,
         minor: 6,
@@ -253,6 +256,7 @@ pub struct ConnectionRefused {
     pub errors: Option<Vec<String>>,
 }
 
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Connected {
     pub team: i32,
@@ -261,6 +265,7 @@ pub struct Connected {
     pub missing_locations: Vec<i64>,
     pub checked_locations: Vec<i64>,
     pub slot_data: Value,
+    #[serde_as(as = "HashMap<DisplayFromStr, _>")]
     pub slot_info: HashMap<i32, NetworkSlot>,
     pub hint_points: i32,
 }
@@ -351,15 +356,21 @@ pub enum PrintJSON {
         data: Vec<JSONMessagePart>,
         message: String,
     },
-    Tutorial { data: Vec<JSONMessagePart> },
+    Tutorial {
+        data: Vec<JSONMessagePart>,
+    },
     TagsChanged {
         data: Vec<JSONMessagePart>,
         team: i32,
         slot: i32,
         tags: Vec<String>,
     },
-    CommandResult { data: Vec<JSONMessagePart> },
-    AdminCommandResult { data: Vec<JSONMessagePart> },
+    CommandResult {
+        data: Vec<JSONMessagePart>,
+    },
+    AdminCommandResult {
+        data: Vec<JSONMessagePart>,
+    },
     Goal {
         data: Vec<JSONMessagePart>,
         team: i32,
@@ -382,7 +393,7 @@ pub enum PrintJSON {
     #[serde(untagged)]
     Text {
         data: Vec<JSONMessagePart>,
-    }
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
