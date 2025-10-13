@@ -154,7 +154,7 @@ impl ArchipelagoClient {
         game: &str,
         name: &str,
         password: Option<&str>,
-        items_handling: Option<i32>,
+        items_handling: ItemsHandlingFlags,
         tags: Vec<String>,
     ) -> Result<Connected, ArchipelagoError> {
         self.send(ClientMessage::Connect(Connect {
@@ -163,9 +163,9 @@ impl ArchipelagoClient {
             uuid: "".to_string(),
             password: password.map(|p| p.to_string()),
             version: network_version(),
-            items_handling,
+            items_handling: items_handling.bits(),
             tags,
-            request_slot_data: true,
+            slot_data: true,
         }))
         .await?;
         let response = self

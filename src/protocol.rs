@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use bitflags::bitflags;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
@@ -92,8 +93,8 @@ pub struct NetworkSlot {
 pub fn network_version() -> NetworkVersion {
     NetworkVersion {
         major: 0,
-        minor: 3,
-        build: 7,
+        minor: 6,
+        build: 0,
         class: "Version".to_string(),
     }
 }
@@ -107,16 +108,32 @@ pub struct Connect {
     pub name: String,
     pub uuid: String,
     pub version: NetworkVersion,
-    pub items_handling: Option<i32>,
+    pub items_handling: u32,
     pub tags: Vec<String>,
     #[serde(rename = "slot_data")]
-    pub request_slot_data: bool,
+    pub slot_data: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConnectUpdate {
     pub items_handling: i32,
     pub tags: Vec<String>,
+}
+
+bitflags! {
+    #[repr(transparent)]
+    pub struct ItemsHandlingFlags: u32 {
+        /// Items are sent from other worlds.
+        const OTHER_WORLDS = 0b001;
+
+        /// Items are sent from your own world. Setting this automatically sets
+        /// [OTHER_WORLDS] as well.
+        const OWN_WORLD = 0b011;
+
+        /// Items are sent from your starting inventory. Setting this
+        /// automatically sets [OTHER_WORLDS] as well.
+        const STARTING_INVENTORY = 0b101;
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
