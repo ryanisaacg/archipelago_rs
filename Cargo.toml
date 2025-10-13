@@ -12,8 +12,8 @@ serde_repr = "0.1"
 thiserror = "1.0"
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
 tokio = "1.0"
-tokio-tungstenite = { version = "0.17", features = ["native-tls"] }
-tungstenite = "0.17"
+tokio-tungstenite = { version = "0.28", features = ["native-tls"] }
+tungstenite = "0.28"
 bitflags = "2.9.4"
 
 [dev-dependencies]

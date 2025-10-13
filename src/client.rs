@@ -116,7 +116,7 @@ impl ArchipelagoClient {
 
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
         let request = serde_json::to_string(&[message])?;
-        self.ws.send(Message::Text(request)).await?;
+        self.ws.send(Message::Text(request.into())).await?;
 
         Ok(())
     }
@@ -365,7 +365,7 @@ pub struct ArchipelagoClientSender {
 impl ArchipelagoClientSender {
     pub async fn send(&mut self, message: ClientMessage) -> Result<(), ArchipelagoError> {
         let request = serde_json::to_string(&[message])?;
-        self.ws.send(Message::Text(request)).await?;
+        self.ws.send(Message::Text(request.into())).await?;
 
         Ok(())
     }
