@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
+use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use bitflags::bitflags;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
@@ -314,6 +314,9 @@ pub struct Print {
     pub text: String,
 }
 
+// Not a very elegant way to handle this. See
+// https://github.com/serde-rs/serde/issues/1799.
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum PrintJSON {
@@ -355,15 +358,21 @@ pub enum PrintJSON {
         data: Vec<JSONMessagePart>,
         message: String,
     },
-    Tutorial { data: Vec<JSONMessagePart> },
+    Tutorial {
+        data: Vec<JSONMessagePart>,
+    },
     TagsChanged {
         data: Vec<JSONMessagePart>,
         team: i32,
         slot: i32,
         tags: Vec<String>,
     },
-    CommandResult { data: Vec<JSONMessagePart> },
-    AdminCommandResult { data: Vec<JSONMessagePart> },
+    CommandResult {
+        data: Vec<JSONMessagePart>,
+    },
+    AdminCommandResult {
+        data: Vec<JSONMessagePart>,
+    },
     Goal {
         data: Vec<JSONMessagePart>,
         team: i32,
@@ -382,6 +391,10 @@ pub enum PrintJSON {
     Countdown {
         data: Vec<JSONMessagePart>,
         countdown: i32,
+    },
+    #[serde(untagged)]
+    Unknown {
+        data: Vec<JSONMessagePart>,
     },
 }
 
