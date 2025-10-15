@@ -18,8 +18,13 @@ pub enum ArchipelagoError {
     },
     #[error("connection closed by server")]
     ConnectionClosed,
-    #[error("data failed to serialize")]
+    #[error("data failed to serialize ({0})")]
     FailedSerialize(#[from] serde_json::Error),
+    #[error("failed to deserialize server data ({error})\n{json}")]
+    FailedDeserialize {
+        json: String,
+        error: serde_json::Error,
+    },
     #[error("unexpected non-text result from websocket")]
     NonTextWebsocketResult(Message),
     #[error("network error")]
@@ -455,7 +460,12 @@ async fn recv_messages(
         match ws.next().await? {
             Ok(Message::Text(response)) => {
                 return Some(
-                    serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| e.into()),
+                    serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| {
+                        ArchipelagoError::FailedDeserialize {
+                            json: response.to_string(),
+                            error: e,
+                        }
+                    }),
                 )
             }
             Ok(Message::Close(_)) => return Some(Err(ArchipelagoError::ConnectionClosed)),
