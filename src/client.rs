@@ -451,12 +451,19 @@ impl ArchipelagoClientReceiver {
 async fn recv_messages(
     mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + std::marker::Unpin,
 ) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
-    match ws.next().await? {
-        Ok(Message::Text(response)) => {
-            Some(serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| e.into()))
+    loop {
+        match ws.next().await? {
+            Ok(Message::Text(response)) => {
+                return Some(
+                    serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| e.into()),
+                )
+            }
+            Ok(Message::Close(_)) => return Some(Err(ArchipelagoError::ConnectionClosed)),
+            // Ignore pings and pongs. Tungstenite handles these for us but doesn't
+            // hide them.
+            Ok(Message::Ping(_) | Message::Pong(_)) => (),
+            Ok(msg) => return Some(Err(ArchipelagoError::NonTextWebsocketResult(msg))),
+            Err(e) => return Some(Err(e.into())),
         }
-        Ok(Message::Close(_)) => Some(Err(ArchipelagoError::ConnectionClosed)),
-        Ok(msg) => Some(Err(ArchipelagoError::NonTextWebsocketResult(msg))),
-        Err(e) => Some(Err(e.into())),
     }
 }
