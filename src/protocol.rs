@@ -4,6 +4,7 @@ use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use std::fmt;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
@@ -398,6 +399,48 @@ pub enum PrintJSON {
     },
 }
 
+impl PrintJSON {
+    /// A utility method that returns a message of an unknown type that just
+    /// contains the given unformatted [text].
+    pub fn message(text: String) -> PrintJSON {
+        PrintJSON::Unknown {
+            data: vec![JSONMessagePart::Text { text }]
+        }
+    }
+
+    /// Returns the data field for any JSONMessagePart.
+    pub fn data(&self) -> &Vec<JSONMessagePart> {
+        use PrintJSON::*;
+        match self {
+            ItemSend { data, .. } => data,
+            ItemCheat { data, .. } => data,
+            Hint { data, .. } => data,
+            Join { data, .. } => data,
+            Part { data, .. } => data,
+            Chat { data, .. } => data,
+            ServerChat { data, .. } => data,
+            Tutorial { data, .. } => data,
+            TagsChanged { data, .. } => data,
+            CommandResult { data, .. } => data,
+            AdminCommandResult { data, .. } => data,
+            Goal { data, .. } => data,
+            Release { data, .. } => data,
+            Collect { data, .. } => data,
+            Countdown { data, .. } => data,
+            Unknown { data, .. } => data,
+        }
+    }
+}
+
+impl fmt::Display for PrintJSON {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        for part in self.data() {
+            f.write_str(&part.text().as_str())?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum JSONMessagePart {
@@ -437,6 +480,31 @@ pub enum JSONMessagePart {
     Text {
         text: String,
     },
+}
+
+impl JSONMessagePart {
+    /// Returns the text field for any JSONMessagePart.
+    pub fn text(&self) -> &String {
+        use JSONMessagePart::*;
+        match self {
+            PlayerId { text, .. } => text,
+            PlayerName { text, .. } => text,
+            ItemId { text, .. } => text,
+            ItemName { text, .. } => text,
+            LocationId { text, .. } => text,
+            LocationName { text, .. } => text,
+            EntranceName { text, .. } => text,
+            Color { text, .. } => text,
+            Text { text, .. } => text,
+        }
+    }
+}
+
+impl fmt::Display for JSONMessagePart {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str(&self.text().as_str())?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
