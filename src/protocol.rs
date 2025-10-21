@@ -23,12 +23,12 @@ pub enum ClientMessage {
     SetNotify(SetNotify),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(tag = "cmd")]
-pub enum ServerMessage {
+pub enum ServerMessage<S> {
     RoomInfo(RoomInfo),
     ConnectionRefused(ConnectionRefused),
-    Connected(Connected),
+    Connected(Connected<S>),
     ReceivedItems(ReceivedItems),
     LocationInfo(LocationInfo),
     RoomUpdate(RoomUpdate),
@@ -265,14 +265,14 @@ pub struct ConnectionRefused {
     pub errors: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Connected {
+#[derive(Debug, Deserialize)]
+pub struct Connected<S> {
     pub team: i32,
     pub slot: i32,
     pub players: Vec<NetworkPlayer>,
     pub missing_locations: Vec<i32>,
     pub checked_locations: Vec<i32>,
-    pub slot_data: Value,
+    pub slot_data: S,
     pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
     pub hint_points: i32,
 }
@@ -404,7 +404,7 @@ impl PrintJSON {
     /// contains the given unformatted [text].
     pub fn message(text: String) -> PrintJSON {
         PrintJSON::Unknown {
-            data: vec![JSONMessagePart::Text { text }]
+            data: vec![JSONMessagePart::Text { text }],
         }
     }
 

@@ -13,8 +13,8 @@ use crate::protocol::*;
 pub enum ArchipelagoError {
     #[error("illegal response")]
     IllegalResponse {
-        received: ServerMessage,
         expected: &'static str,
+        received: &'static str,
     },
     #[error("connection closed by server")]
     ConnectionClosed,
@@ -31,21 +31,30 @@ pub enum ArchipelagoError {
     NetworkError(#[from] tungstenite::Error),
 }
 
-/**
- * A convenience layer to manage your connection to and communication with Archipelago
- */
-pub struct ArchipelagoClient {
+/// The client that talks to the Archipelago server using the Archipelago
+/// protocol.
+///
+/// The generic type [S] is used to deserialize the slot data in the initial
+/// [Connected] message. By default, it will decode the slot data as a dynamic
+/// JSON blob.
+pub struct ArchipelagoClient<S = serde_json::Value>
+where
+    S: for<'a> serde::de::Deserialize<'a>,
+{
     ws: WebSocketStream<MaybeTlsStream<TcpStream>>,
     room_info: RoomInfo,
-    message_buffer: Vec<ServerMessage>,
+    message_buffer: Vec<ServerMessage<S>>,
     data_package: Option<DataPackageObject>,
 }
 
-impl ArchipelagoClient {
+impl<S> ArchipelagoClient<S>
+where
+    S: for<'a> serde::de::Deserialize<'a>,
+{
     /**
      * Create an instance of the client and connect to the server on the given URL
      */
-    pub async fn new(url: &str) -> Result<ArchipelagoClient, ArchipelagoError> {
+    pub async fn new(url: &str) -> Result<ArchipelagoClient<S>, ArchipelagoError> {
         // Attempt WSS, downgrade to WS if the TLS handshake fails
         let mut wss_url = String::new();
         wss_url.push_str("wss://");
@@ -67,12 +76,7 @@ impl ArchipelagoClient {
         let mut iter = response.into_iter();
         let room_info = match iter.next() {
             Some(ServerMessage::RoomInfo(room)) => room,
-            Some(received) => {
-                return Err(ArchipelagoError::IllegalResponse {
-                    received,
-                    expected: "Expected RoomInfo",
-                })
-            }
+            Some(received) => return Err(Self::illegal_response("RoomInfo", received)),
             None => return Err(ArchipelagoError::ConnectionClosed),
         };
 
@@ -91,7 +95,7 @@ impl ArchipelagoClient {
     pub async fn with_data_package(
         url: &str,
         games: Option<Vec<String>>,
-    ) -> Result<ArchipelagoClient, ArchipelagoError> {
+    ) -> Result<ArchipelagoClient<S>, ArchipelagoError> {
         let mut client = Self::new(url).await?;
         client
             .send(ClientMessage::GetDataPackage(GetDataPackage { games }))
@@ -99,12 +103,7 @@ impl ArchipelagoClient {
         let response = client.recv().await?;
         match response {
             Some(ServerMessage::DataPackage(pkg)) => client.data_package = Some(pkg.data),
-            Some(received) => {
-                return Err(ArchipelagoError::IllegalResponse {
-                    received,
-                    expected: "DataPackage",
-                })
-            }
+            Some(received) => return Err(Self::illegal_response("DataPackage", received)),
             None => return Err(ArchipelagoError::ConnectionClosed),
         }
 
@@ -132,7 +131,7 @@ impl ArchipelagoClient {
      * Will buffer results locally, and return results from buffer or wait on network
      * if buffer is empty
      */
-    pub async fn recv(&mut self) -> Result<Option<ServerMessage>, ArchipelagoError> {
+    pub async fn recv(&mut self) -> Result<Option<ServerMessage<S>>, ArchipelagoError> {
         if let Some(message) = self.message_buffer.pop() {
             return Ok(Some(message));
         }
@@ -161,7 +160,7 @@ impl ArchipelagoClient {
         password: Option<&str>,
         items_handling: ItemsHandlingFlags,
         tags: Vec<String>,
-    ) -> Result<Connected, ArchipelagoError> {
+    ) -> Result<Connected<S>, ArchipelagoError> {
         self.send(ClientMessage::Connect(Connect {
             game: game.to_string(),
             name: name.to_string(),
@@ -180,10 +179,7 @@ impl ArchipelagoClient {
 
         match response {
             ServerMessage::Connected(connected) => Ok(connected),
-            received => Err(ArchipelagoError::IllegalResponse {
-                received,
-                expected: "Connected",
-            }),
+            received => Err(Self::illegal_response("Connected", received)),
         }
     }
 
@@ -336,7 +332,7 @@ impl ArchipelagoClient {
      * there's now extra coordination required to match a read and write, but it brings
      * the benefits of allowing simultaneous reading and writing.
      */
-    pub fn split(self) -> (ArchipelagoClientSender, ArchipelagoClientReceiver) {
+    pub fn split(self) -> (ArchipelagoClientSender, ArchipelagoClientReceiver<S>) {
         let Self {
             ws,
             room_info,
@@ -353,6 +349,30 @@ impl ArchipelagoClient {
                 data_package,
             },
         )
+    }
+
+    /// Returns an illegal response error indicating the [expected] response
+    /// type and the actual type of [received].
+    fn illegal_response(expected: &'static str, received: ServerMessage<S>) -> ArchipelagoError {
+        use ServerMessage::*;
+        ArchipelagoError::IllegalResponse {
+            expected,
+            received: match received {
+                RoomInfo(_) => "RoomInfo",
+                ConnectionRefused(_) => "ConnectionRefused",
+                Connected(_) => "Connected",
+                ReceivedItems(_) => "ReceivedItems",
+                LocationInfo(_) => "LocationInfo",
+                RoomUpdate(_) => "RoomUpdate",
+                Print(_) => "Print",
+                PrintJSON(_) => "PrintJSON",
+                DataPackage(_) => "DataPackage",
+                Bounced(_) => "Bounced",
+                InvalidPacket(_) => "InvalidPacket",
+                Retrieved(_) => "Retrieved",
+                SetReply(_) => "SetReply",
+            },
+        }
     }
 }
 
@@ -420,15 +440,21 @@ impl ArchipelagoClientSender {
  * both sending and receiving are intentionally unavailable; for those messages,
  * use `recv`.
  */
-pub struct ArchipelagoClientReceiver {
+pub struct ArchipelagoClientReceiver<S = serde_json::Value>
+where
+    S: for<'a> serde::de::Deserialize<'a>,
+{
     ws: SplitStream<WebSocketStream<MaybeTlsStream<TcpStream>>>,
     room_info: RoomInfo,
-    message_buffer: Vec<ServerMessage>,
+    message_buffer: Vec<ServerMessage<S>>,
     data_package: Option<DataPackageObject>,
 }
 
-impl ArchipelagoClientReceiver {
-    pub async fn recv(&mut self) -> Result<Option<ServerMessage>, ArchipelagoError> {
+impl<S> ArchipelagoClientReceiver<S>
+where
+    S: for<'a> serde::de::Deserialize<'a>,
+{
+    pub async fn recv(&mut self) -> Result<Option<ServerMessage<S>>, ArchipelagoError> {
         if let Some(message) = self.message_buffer.pop() {
             return Ok(Some(message));
         }
@@ -453,14 +479,17 @@ impl ArchipelagoClientReceiver {
     }
 }
 
-async fn recv_messages(
+async fn recv_messages<S>(
     mut ws: impl Stream<Item = Result<Message, tungstenite::error::Error>> + std::marker::Unpin,
-) -> Option<Result<Vec<ServerMessage>, ArchipelagoError>> {
+) -> Option<Result<Vec<ServerMessage<S>>, ArchipelagoError>>
+where
+    S: for<'a> serde::de::Deserialize<'a>,
+{
     loop {
         match ws.next().await? {
             Ok(Message::Text(response)) => {
                 return Some(
-                    serde_json::from_str::<Vec<ServerMessage>>(&response).map_err(|e| {
+                    serde_json::from_str::<Vec<ServerMessage<S>>>(&response).map_err(|e| {
                         ArchipelagoError::FailedDeserialize {
                             json: response.to_string(),
                             error: e,
