@@ -354,24 +354,9 @@ where
     /// Returns an illegal response error indicating the [expected] response
     /// type and the actual type of [received].
     fn illegal_response(expected: &'static str, received: ServerMessage<S>) -> ArchipelagoError {
-        use ServerMessage::*;
         ArchipelagoError::IllegalResponse {
             expected,
-            received: match received {
-                RoomInfo(_) => "RoomInfo",
-                ConnectionRefused(_) => "ConnectionRefused",
-                Connected(_) => "Connected",
-                ReceivedItems(_) => "ReceivedItems",
-                LocationInfo(_) => "LocationInfo",
-                RoomUpdate(_) => "RoomUpdate",
-                Print(_) => "Print",
-                PrintJSON(_) => "PrintJSON",
-                DataPackage(_) => "DataPackage",
-                Bounced(_) => "Bounced",
-                InvalidPacket(_) => "InvalidPacket",
-                Retrieved(_) => "Retrieved",
-                SetReply(_) => "SetReply",
-            },
+            received: received.type_name(),
         }
     }
 }

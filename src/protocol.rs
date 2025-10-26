@@ -41,6 +41,28 @@ pub enum ServerMessage<S> {
     SetReply(SetReply),
 }
 
+impl<S> ServerMessage<S> {
+    /// Returns the name of this message's type.
+    pub fn type_name(&self) -> &'static str {
+        use ServerMessage::*;
+        match self {
+            RoomInfo(_) => "RoomInfo",
+            ConnectionRefused(_) => "ConnectionRefused",
+            Connected(_) => "Connected",
+            ReceivedItems(_) => "ReceivedItems",
+            LocationInfo(_) => "LocationInfo",
+            RoomUpdate(_) => "RoomUpdate",
+            Print(_) => "Print",
+            PrintJSON(_) => "PrintJSON",
+            DataPackage(_) => "DataPackage",
+            Bounced(_) => "Bounced",
+            InvalidPacket(_) => "InvalidPacket",
+            Retrieved(_) => "Retrieved",
+            SetReply(_) => "SetReply",
+        }
+    }
+}
+
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
 #[repr(u16)]
 pub enum Permission {
