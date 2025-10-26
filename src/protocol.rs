@@ -69,10 +69,39 @@ pub struct NetworkPlayer {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NetworkItem {
-    pub item: i32,
-    pub location: i32,
+    pub item: i64,
+    pub location: i64,
     pub player: i32,
-    pub flags: i32,
+    pub flags: NetworkItemFlags,
+}
+
+bitflags! {
+    #[repr(transparent)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[serde(from = "u8")]
+    #[serde(into = "u8")]
+    pub struct NetworkItemFlags: u8 {
+        /// The item can unlock logical advancement.
+        const PROGRESSION = 0b001;
+
+        /// The item is especially useful.
+        const USEFUL = 0b010;
+
+        /// The item is a trap.
+        const TRAP = 0b100;
+    }
+}
+
+impl From<u8> for NetworkItemFlags {
+    fn from(value: u8) -> NetworkItemFlags {
+        NetworkItemFlags::from_bits_retain(value)
+    }
+}
+
+impl Into<u8> for NetworkItemFlags {
+    fn into(self) -> u8 {
+        self.bits()
+    }
 }
 
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
@@ -151,7 +180,7 @@ pub struct LocationScouts {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateHint {
     pub player: i32,
-    pub location: i32,
+    pub location: i64,
     pub status: HintStatus,
 }
 
@@ -542,8 +571,8 @@ pub struct DataPackageObject {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GameData {
-    pub item_name_to_id: HashMap<String, i32>,
-    pub location_name_to_id: HashMap<String, i32>,
+    pub item_name_to_id: HashMap<String, i64>,
+    pub location_name_to_id: HashMap<String, i64>,
     pub version: i32,
     pub checksum: String,
 }
