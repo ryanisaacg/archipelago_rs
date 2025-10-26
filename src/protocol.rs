@@ -595,7 +595,6 @@ pub struct DataPackageObject {
 pub struct GameData {
     pub item_name_to_id: HashMap<String, i64>,
     pub location_name_to_id: HashMap<String, i64>,
-    pub version: i32,
     pub checksum: String,
 }
 
