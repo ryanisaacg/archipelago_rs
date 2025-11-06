@@ -478,7 +478,6 @@ async fn recv_messages(
             let result: Result<Vec<ServerMessage>, _> = serde_json::from_str(&response);
 
             Some(result
-                .map(|messages| messages.into())
                 .map_err(|e| {
                     log::error!("Errored message: {}", response);
                     e.into()
