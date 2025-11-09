@@ -1,6 +1,6 @@
 use serde_with::DisplayFromStr;
 use std::collections::HashMap;
-
+use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -52,12 +52,23 @@ pub enum Permission {
     AutoEnabled = 7,
 }
 
+fn default_version_class() -> String {
+    "Version".to_string()
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NetworkVersion {
     pub major: i32,
     pub minor: i32,
     pub build: i32,
+    #[serde(default = "default_version_class")]
     pub class: String,
+}
+
+impl Display for NetworkVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("{}.{}.{}", self.major, self.minor, self.build))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
