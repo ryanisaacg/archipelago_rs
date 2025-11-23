@@ -216,7 +216,7 @@ where
      *
      * Used to inform the server of new checks that are made, as well as to sync state.
      */
-    pub async fn location_checks(&mut self, locations: Vec<i32>) -> Result<(), ArchipelagoError> {
+    pub async fn location_checks(&mut self, locations: Vec<i64>) -> Result<(), ArchipelagoError> {
         Ok(self
             .send(ClientMessage::LocationChecks(LocationChecks { locations }))
             .await?)
@@ -229,8 +229,8 @@ where
      */
     pub async fn location_scouts(
         &mut self,
-        locations: Vec<i32>,
-        create_as_hint: i32,
+        locations: Vec<i64>,
+        create_as_hint: u8,
     ) -> Result<LocationInfo, ArchipelagoError> {
         self.send(ClientMessage::LocationScouts(LocationScouts {
             locations,
@@ -388,7 +388,7 @@ impl ArchipelagoClientSender {
             .await?)
     }
 
-    pub async fn location_checks(&mut self, locations: Vec<i32>) -> Result<(), ArchipelagoError> {
+    pub async fn location_checks(&mut self, locations: Vec<i64>) -> Result<(), ArchipelagoError> {
         Ok(self
             .send(ClientMessage::LocationChecks(LocationChecks { locations }))
             .await?)

@@ -75,16 +75,16 @@ pub enum Permission {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkVersion {
-    pub major: i32,
-    pub minor: i32,
-    pub build: i32,
+    pub major: i64,
+    pub minor: i64,
+    pub build: i64,
     pub class: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkPlayer {
-    pub team: i32,
-    pub slot: i32,
+    pub team: i64,
+    pub slot: i64,
     pub alias: String,
     pub name: String,
 }
@@ -93,7 +93,7 @@ pub struct NetworkPlayer {
 pub struct NetworkItem {
     pub item: i64,
     pub location: i64,
-    pub player: i32,
+    pub player: i64,
     pub flags: NetworkItemFlags,
 }
 
@@ -139,7 +139,7 @@ pub struct NetworkSlot {
     pub name: String,
     pub game: String,
     pub r#type: SlotType,
-    pub group_members: Vec<i32>,
+    pub group_members: Vec<i64>,
 }
 
 pub fn network_version() -> NetworkVersion {
@@ -160,7 +160,7 @@ pub struct Connect {
     pub name: String,
     pub uuid: String,
     pub version: NetworkVersion,
-    pub items_handling: u32,
+    pub items_handling: u8,
     pub tags: Vec<String>,
     #[serde(rename = "slot_data")]
     pub slot_data: bool,
@@ -168,13 +168,13 @@ pub struct Connect {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectUpdate {
-    pub items_handling: i32,
+    pub items_handling: u8,
     pub tags: Vec<String>,
 }
 
 bitflags! {
     #[repr(transparent)]
-    pub struct ItemsHandlingFlags: u32 {
+    pub struct ItemsHandlingFlags: u8 {
         /// Items are sent from other worlds.
         const OTHER_WORLDS = 0b001;
 
@@ -190,18 +190,18 @@ bitflags! {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocationChecks {
-    pub locations: Vec<i32>,
+    pub locations: Vec<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocationScouts {
-    pub locations: Vec<i32>,
-    pub create_as_hint: i32,
+    pub locations: Vec<i64>,
+    pub create_as_hint: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateHint {
-    pub player: i32,
+    pub player: i64,
     pub location: i64,
     pub status: HintStatus,
 }
@@ -300,15 +300,15 @@ pub struct RoomInfo {
     #[serde(rename = "password")]
     pub password_required: bool,
     pub permissions: HashMap<String, Permission>,
-    pub hint_cost: i32,
-    pub location_check_points: i32,
+    pub hint_cost: i64,
+    pub location_check_points: i64,
     pub games: Vec<String>,
     #[serde(default)]
-    pub datapackage_versions: HashMap<String, i32>,
+    pub datapackage_versions: HashMap<String, i64>,
     #[serde(default)]
     pub datapackage_checksums: HashMap<String, String>,
     pub seed_name: String,
-    pub time: f32,
+    pub time: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -318,19 +318,19 @@ pub struct ConnectionRefused {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Connected<S> {
-    pub team: i32,
-    pub slot: i32,
+    pub team: i64,
+    pub slot: i64,
     pub players: Vec<NetworkPlayer>,
-    pub missing_locations: Vec<i32>,
-    pub checked_locations: Vec<i32>,
+    pub missing_locations: Vec<i64>,
+    pub checked_locations: Vec<i64>,
     pub slot_data: S,
     pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
-    pub hint_points: i32,
+    pub hint_points: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReceivedItems {
-    pub index: i32,
+    pub index: i64,
     pub items: Vec<NetworkItem>,
 }
 
@@ -347,18 +347,18 @@ pub struct RoomUpdate {
     #[serde(rename = "password")]
     pub password_required: bool,
     pub permissions: Option<HashMap<String, Permission>>,
-    pub hint_cost: Option<i32>,
-    pub location_check_points: Option<i32>,
+    pub hint_cost: Option<i64>,
+    pub location_check_points: Option<i64>,
     pub games: Option<Vec<String>>,
-    pub datapackage_versions: Option<HashMap<String, i32>>,
+    pub datapackage_versions: Option<HashMap<String, i64>>,
     pub datapackage_checksums: Option<HashMap<String, String>>,
     pub seed_name: Option<String>,
-    pub time: Option<f32>,
+    pub time: Option<f64>,
     // Exclusive to RoomUpdate
-    pub hint_points: Option<i32>,
+    pub hint_points: Option<i64>,
     pub players: Option<Vec<NetworkPlayer>>,
-    pub checked_locations: Option<Vec<i32>>,
-    pub missing_locations: Option<Vec<i32>>,
+    pub checked_locations: Option<Vec<i64>>,
+    pub missing_locations: Option<Vec<i64>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -374,36 +374,36 @@ pub struct Print {
 pub enum PrintJSON {
     ItemSend {
         data: Vec<JSONMessagePart>,
-        receiving: i32,
+        receiving: i64,
         item: NetworkItem,
     },
     ItemCheat {
         data: Vec<JSONMessagePart>,
-        receiving: i32,
+        receiving: i64,
         item: NetworkItem,
-        team: i32,
+        team: i64,
     },
     Hint {
         data: Vec<JSONMessagePart>,
-        receiving: i32,
+        receiving: i64,
         item: NetworkItem,
         found: bool,
     },
     Join {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
         tags: Vec<String>,
     },
     Part {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
     },
     Chat {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
         message: String,
     },
     ServerChat {
@@ -415,8 +415,8 @@ pub enum PrintJSON {
     },
     TagsChanged {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
         tags: Vec<String>,
     },
     CommandResult {
@@ -427,22 +427,22 @@ pub enum PrintJSON {
     },
     Goal {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
     },
     Release {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
     },
     Collect {
         data: Vec<JSONMessagePart>,
-        team: i32,
-        slot: i32,
+        team: i64,
+        slot: i64,
     },
     Countdown {
         data: Vec<JSONMessagePart>,
-        countdown: i32,
+        countdown: i64,
     },
     #[serde(untagged)]
     Unknown {
@@ -497,28 +497,28 @@ impl fmt::Display for PrintJSON {
 pub enum JSONMessagePart {
     PlayerId {
         text: String,
-        player: i32,
+        player: i64,
     },
     PlayerName {
         text: String,
     },
     ItemId {
         text: String,
-        flags: i32,
-        player: i32,
+        flags: NetworkItemFlags,
+        player: i64,
     },
     ItemName {
         text: String,
-        flags: i32,
-        player: i32,
+        flags: NetworkItemFlags,
+        player: i64,
     },
     LocationId {
         text: String,
-        player: i32,
+        player: i64,
     },
     LocationName {
         text: String,
-        player: i32,
+        player: i64,
     },
     EntranceName {
         text: String,
@@ -601,7 +601,7 @@ pub struct GameData {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bounced {
     pub games: Vec<String>,
-    pub slots: Vec<i32>,
+    pub slots: Vec<i64>,
     pub tags: Vec<String>,
     pub data: Value,
 }
