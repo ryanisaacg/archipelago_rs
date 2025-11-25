@@ -345,7 +345,7 @@ pub struct RoomUpdate {
     pub version: Option<NetworkVersion>,
     pub tags: Option<Vec<String>>,
     #[serde(rename = "password")]
-    pub password_required: bool,
+    pub password_required: Option<bool>,
     pub permissions: Option<HashMap<String, Permission>>,
     pub hint_cost: Option<i64>,
     pub location_check_points: Option<i64>,
