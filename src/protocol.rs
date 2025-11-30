@@ -645,7 +645,5 @@ pub struct Retrieved {
 pub struct SetReply {
     pub key: String,
     pub value: Value,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub original_value: Option<Value>, // Won't be there if key is prefixed with _read
 }
