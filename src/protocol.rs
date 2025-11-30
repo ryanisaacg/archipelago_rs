@@ -332,8 +332,7 @@ pub struct RoomInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionRefused {
     #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub errors: Option<Vec<String>>,
+    pub errors: Vec<String>,
 }
 
 #[serde_as]
