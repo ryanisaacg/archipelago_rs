@@ -94,21 +94,9 @@ where
      */
     pub async fn with_data_package(
         url: &str,
-       mut games: Option<Vec<String>>,
+        games: Option<Vec<String>>,
     ) -> Result<ArchipelagoClient<S>, ArchipelagoError> {
         let mut client = Self::new(url).await?;
-        if games.is_none() {
-            // If None, request the games that are part of the connected room.
-            let mut list: Vec<String> = vec![];
-            client
-                .room_info
-                .datapackage_checksums
-                .keys()
-                .for_each(|name| {
-                    list.push(name.clone());
-                });
-            games = Some(list);
-        }
         client
             .send(ClientMessage::GetDataPackage(GetDataPackage { games }))
             .await?;

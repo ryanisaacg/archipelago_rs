@@ -92,7 +92,11 @@ pub struct NetworkVersion {
 
 impl Display for NetworkVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", format!("{}.{}.{}", self.major, self.minor, self.build))
+        write!(
+            f,
+            "{}",
+            format!("{}.{}.{}", self.major, self.minor, self.build)
+        )
     }
 }
 
@@ -218,9 +222,7 @@ pub struct LocationScouts {
 pub struct UpdateHint {
     pub player: i64,
     pub location: i64,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<HintStatus>,
+    pub status: HintStatus,
 }
 
 #[derive(Debug, Clone, Serialize_repr, Deserialize_repr)]
@@ -336,7 +338,7 @@ pub struct ConnectionRefused {
 }
 
 #[serde_as]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Connected<S> {
     pub team: i64,
     pub slot: i64,
@@ -423,15 +425,9 @@ pub enum PrintJSON {
     },
     Chat {
         data: Vec<JSONMessagePart>,
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        team: Option<i64>,
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        slot: Option<i64>,
-        #[serde(default)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        message: Option<String>,
+        team: i64,
+        slot: i64,
+        message: String,
     },
     ServerChat {
         data: Vec<JSONMessagePart>,
@@ -475,10 +471,6 @@ pub enum PrintJSON {
     Unknown {
         data: Vec<JSONMessagePart>,
     },
-    #[serde(untagged)]
-    Text {
-        data: Vec<JSONMessagePart>,
-    },
 }
 
 impl PrintJSON {
@@ -510,7 +502,6 @@ impl PrintJSON {
             Collect { data, .. } => data,
             Countdown { data, .. } => data,
             Unknown { data, .. } => data,
-            Text { data } => data,
         }
     }
 }
@@ -632,18 +623,10 @@ pub struct GameData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bounced {
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub games: Option<Vec<String>>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub slots: Option<Vec<i64>>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Value>,
+    pub games: Vec<String>,
+    pub slots: Vec<i64>,
+    pub tags: Vec<String>,
+    pub data: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
