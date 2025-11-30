@@ -1,15 +1,19 @@
+use serde_with::DisplayFromStr;
 use std::collections::HashMap;
+use std::fmt::Display;
 
 use bitflags::bitflags;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use serde_with::serde_as;
 use std::fmt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "cmd")]
 pub enum ClientMessage {
     Connect(Connect),
+    ConnectUpdate(ConnectUpdate),
     Sync,
     LocationChecks(LocationChecks),
     LocationScouts(LocationScouts),
@@ -73,12 +77,27 @@ pub enum Permission {
     AutoEnabled = 7,
 }
 
+fn default_version_class() -> String {
+    "Version".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkVersion {
     pub major: i64,
     pub minor: i64,
     pub build: i64,
+    #[serde(default = "default_version_class")]
     pub class: String,
+}
+
+impl Display for NetworkVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            format!("{}.{}.{}", self.major, self.minor, self.build)
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -237,6 +256,7 @@ pub struct Say {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GetDataPackage {
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub games: Option<Vec<String>>,
 }
@@ -265,24 +285,24 @@ pub struct Set {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "operation", content = "value", rename_all = "snake_case")]
 pub enum DataStorageOperation {
-    Replace(serde_json::Value),
+    Replace(Value),
     Default,
-    Add(serde_json::Value),
-    Mul(serde_json::Value),
-    Pow(serde_json::Value),
-    Mod(serde_json::Value),
+    Add(Value),
+    Mul(Value),
+    Pow(Value),
+    Mod(Value),
     Floor,
     Ceil,
-    Max(serde_json::Value),
-    Min(serde_json::Value),
-    And(serde_json::Value),
-    Or(serde_json::Value),
-    Xor(serde_json::Value),
-    LeftShift(serde_json::Value),
-    RightShift(serde_json::Value),
-    Remove(serde_json::Value),
-    Pop(serde_json::Value),
-    Update(serde_json::Value),
+    Max(Value),
+    Min(Value),
+    And(Value),
+    Or(Value),
+    Xor(Value),
+    LeftShift(Value),
+    RightShift(Value),
+    Remove(Value),
+    Pop(Value),
+    Update(Value),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -313,9 +333,11 @@ pub struct RoomInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionRefused {
+    #[serde(default)]
     pub errors: Vec<String>,
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Connected<S> {
     pub team: i64,
@@ -324,7 +346,8 @@ pub struct Connected<S> {
     pub missing_locations: Vec<i64>,
     pub checked_locations: Vec<i64>,
     pub slot_data: S,
-    pub slot_info: HashMap<String, NetworkSlot>, // TODO: docs claim this is an int key. they are lying?
+    #[serde_as(as = "HashMap<DisplayFromStr, _>")]
+    pub slot_info: HashMap<i64, NetworkSlot>,
     pub hint_points: i64,
 }
 
@@ -615,12 +638,12 @@ pub struct InvalidPacket {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Retrieved {
-    keys: Value,
+    pub keys: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SetReply {
-    key: String,
-    value: Value,
-    original_value: Value,
+    pub key: String,
+    pub value: Value,
+    pub original_value: Option<Value>, // Won't be there if key is prefixed with _read
 }
