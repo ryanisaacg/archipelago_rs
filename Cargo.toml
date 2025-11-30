@@ -15,6 +15,7 @@ tokio = "1.0"
 tokio-tungstenite = { version = "0.28", features = ["native-tls"] }
 tungstenite = "0.28"
 bitflags = { version = "2.9.4" }
+serde_with = "3.16.1"
 
 [dev-dependencies]
 anyhow = "1.0"

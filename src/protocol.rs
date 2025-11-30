@@ -6,7 +6,11 @@ use serde_json::Value;
 use serde_repr::{Deserialize_repr, Serialize_repr};
 use std::fmt;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+mod bounce;
+
+pub use bounce::*;
+
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "cmd")]
 pub enum ClientMessage {
     Connect(Connect),
@@ -239,14 +243,6 @@ pub struct Say {
 pub struct GetDataPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub games: Option<Vec<String>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Bounce {
-    pub games: Option<Vec<String>>,
-    pub slots: Option<Vec<String>>,
-    pub tags: Option<Vec<String>>,
-    pub data: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -596,14 +592,6 @@ pub struct GameData {
     pub item_name_to_id: HashMap<String, i64>,
     pub location_name_to_id: HashMap<String, i64>,
     pub checksum: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Bounced {
-    pub games: Vec<String>,
-    pub slots: Vec<i64>,
-    pub tags: Vec<String>,
-    pub data: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
