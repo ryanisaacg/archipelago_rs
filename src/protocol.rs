@@ -77,16 +77,11 @@ pub enum Permission {
     AutoEnabled = 7,
 }
 
-fn default_version_class() -> String {
-    "Version".to_string()
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkVersion {
     pub major: i64,
     pub minor: i64,
     pub build: i64,
-    #[serde(default = "default_version_class")]
     pub class: String,
 }
 
