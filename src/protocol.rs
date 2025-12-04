@@ -618,8 +618,8 @@ pub struct GameData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Bounced {
-    pub games: Vec<String>,
-    pub slots: Vec<i64>,
+    pub games: Option<Vec<String>>,
+    pub slots: Option<Vec<i64>>,
     pub tags: Vec<String>,
     pub data: Value,
 }
